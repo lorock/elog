@@ -1,5 +1,7 @@
 package elog
 
+import "fmt"
+
 type LogLevel uint8
 
 const (
@@ -29,9 +31,7 @@ var (
 		PanicLvl: PanicStr,
 		FatalLvl: FatalStr,
 	}
-)
 
-var (
 	str2LvlMap = map[string]LogLevel{
 		DebugStr: DebugLvl,
 		InfoStr:  InfoLvl,
@@ -53,5 +53,5 @@ func (l LogLevel) String() string {
 		return lvl
 	}
 
-	return ""
+	return fmt.Sprintf("Level(%d)", l)
 }

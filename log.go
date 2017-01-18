@@ -13,7 +13,7 @@ var (
 )
 
 type ELog struct {
-	log *logger
+	logger *logger
 
 	stdout io.Writer
 
@@ -55,18 +55,29 @@ func NewELog(cfg *Config) (*ELog, error) {
 	}
 
 	elog = &ELog{
-		log: log,
-		cfg: cfg,
+		logger: log,
+		cfg:    cfg,
 	}
 
-    if cfg.EnabledStdout {
-        elog.stdout = os.Stdout
-    }
+	if cfg.EnabledStdout {
+		elog.stdout = os.Stdout
+	}
 
 	return elog, nil
 }
 
 // reload config.It's aim to rotate log.
+//
+// example:
+//     sig := make(chan os.Signal)
+//     signal.Notify(sig, syscall.SIGHUP)
+//     for s := range sig {
+//         if s = syscall.SIGHUP {
+//             if err := elog.Reload(); err != nil {
+//                 fmt.Printf("Rotate log encounter a error.Error: %v", err)
+//             }
+//         }
+//     }
 func (e *ELog) Reload() error {
 	e.log.Lock()
 	defer e.log.Unlock()
@@ -89,7 +100,5 @@ func (e *ELog) Reload() error {
 		return err
 	}
 
-	return nil
-}
 	return nil
 }

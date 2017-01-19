@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -22,9 +24,11 @@ type ELog struct {
 
 	stdout io.Writer
 
-	logChan chan logMessage
+	logChan chan *logMessage
 
 	cfg *Config
+
+	wg sync.WaitGroup
 }
 
 type logger struct {
@@ -37,6 +41,8 @@ type logMessage struct {
 	msg string
 
 	lvl LogLevel
+
+	lineNo string // 行号信息
 }
 
 func NewELog(cfg *Config) (*ELog, error) {
@@ -57,6 +63,13 @@ func NewELog(cfg *Config) (*ELog, error) {
 		err     error
 		elog    *ELog
 	)
+
+	dir := filepath.Dir(cfg.AbsPath)
+	if _, err := os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			os.MkdirAll(dir, os.ModePerm)
+		}
+	}
 
 	fileLog, err = os.OpenFile(cfg.AbsPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, cfg.Perm)
 	if err != nil {
@@ -82,18 +95,31 @@ func NewELog(cfg *Config) (*ELog, error) {
 }
 
 func (e *ELog) startGoroutine() {
-	e.logChan = make(chan logMessage, goroutineCount)
-
-	for {
-		select {
-		case logMsg, ok := <-e.logChan:
-			if !ok {
-				return
-			}
-			e.log(logMsg)
-			msgPool.Put(logMsg) // 用完之后将对象放回池里
+	e.wg.Add(1)
+	go func() {
+		if e.logChan == nil {
+			e.logChan = make(chan *logMessage, goroutineCount)
 		}
-	}
+		e.wg.Done() // 防止当前goroutine未启动就开始写日志
+
+		for {
+			select {
+			case logMsg, ok := <-e.logChan:
+				if !ok {
+					return
+				}
+				e.log(logMsg)
+
+				// 处理Fatal
+				if logMsg.lvl == FatalLvl {
+					e.Close()
+					os.Exit(-1)
+				}
+
+				msgPool.Put(logMsg) // 用完之后将对象放回池里
+			}
+		}
+	}()
 }
 
 // reload config.It's aim to rotate log.
@@ -137,8 +163,8 @@ func (e *ELog) Close() {
 	e.logger.Lock()
 	defer e.logger.Unlock()
 
-	fmt.Println("ELog: start close log.")
-	defer fmt.Println("Elog: log closed.")
+	log.Println("ELog: start close log.")
+	defer log.Println("Elog: log closed.")
 
 	var err error
 

@@ -42,6 +42,7 @@ var (
 	}
 )
 
+// 配置的时候使用
 func Str2LogLvl(v string) (LogLevel, bool) {
 	lvl, found := str2LvlMap[v]
 	return lvl, found

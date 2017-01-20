@@ -48,7 +48,7 @@ func (e *ELog) baseLog(lvl LogLevel, msg string) {
 	}
 	logMsg.lineNo = line
 
-	e.wg.Wait()
+	e.waitWrite.Wait()
 	e.logChan <- logMsg
 }
 
@@ -94,13 +94,8 @@ func (e *ELog) log(logMsg *logMessage) {
 
 	// 行号
 	if e.cfg.ShowLineNumber {
-		lineNo, err := getLineNo()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		} else {
-			buffer.WriteString(lineNo)
-			buffer.WriteByte(space)
-		}
+		buffer.WriteString(logMsg.lineNo)
+		buffer.WriteByte(space)
 	}
 
 	// 日志信息

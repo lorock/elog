@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	goroutineCount = 6000
+	goroutineCount = 40000
 )
 
 var (
@@ -28,7 +28,8 @@ type ELog struct {
 
 	cfg *Config
 
-	wg sync.WaitGroup
+	waitWrite sync.WaitGroup
+	waitClose sync.WaitGroup
 }
 
 type logger struct {
@@ -95,17 +96,23 @@ func NewELog(cfg *Config) (*ELog, error) {
 }
 
 func (e *ELog) startGoroutine() {
-	e.wg.Add(1)
+	e.waitWrite.Add(1)
 	go func() {
+		defer func() {
+			e.waitClose.Done()
+		}()
+
 		if e.logChan == nil {
 			e.logChan = make(chan *logMessage, goroutineCount)
 		}
-		e.wg.Done() // 防止当前goroutine未启动就开始写日志
 
+		e.waitWrite.Done()
+		e.waitClose.Add(1)
 		for {
 			select {
 			case logMsg, ok := <-e.logChan:
 				if !ok {
+					log.Println("Chan is closed.")
 					return
 				}
 				e.log(logMsg)
@@ -121,6 +128,12 @@ func (e *ELog) startGoroutine() {
 		}
 	}()
 }
+
+// func (e *ELog) Wait() {
+// 	for len(e.logChan) > 0 {
+// 		time.Sleep(time.Millisecond)
+// 	}
+// }
 
 // reload config.It's aim to rotate log.
 //
@@ -160,8 +173,8 @@ func (e *ELog) Reload() error {
 }
 
 func (e *ELog) Close() {
-	e.logger.Lock()
-	defer e.logger.Unlock()
+	// e.logger.Lock()
+	// defer e.logger.Unlock()
 
 	log.Println("ELog: start close log.")
 	defer log.Println("Elog: log closed.")
@@ -169,6 +182,9 @@ func (e *ELog) Close() {
 	var err error
 
 	close(e.logChan)
+	// 等待所有输出完成
+	e.waitClose.Wait()
+	log.Println("After wait.")
 
 	if err = e.logger.f.Sync(); err != nil {
 		fmt.Fprintf(os.Stderr, "Sync log data in Close encounter a error.Error:%v\n", err)

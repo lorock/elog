@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -80,6 +81,13 @@ func (e *ELog) Fatal(format string, params ...interface{}) {
 
 // core func
 func (e *ELog) log(logMsg *logMessage) {
+	defer func() {
+		if err := recover(); err != nil {
+			// avoid panic main channel.
+			log.Printf("Recover from a error.Error(%v)\n", err)
+		}
+	}()
+
 	var buffer *bytes.Buffer
 	buffer = bufPool.Get().(*bytes.Buffer)
 	buffer.Reset() // 不能保证buffer是否被GC

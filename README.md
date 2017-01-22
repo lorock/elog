@@ -1,2 +1,2 @@
 # elog
-The elog is handy to use.
+An asynchronous log system based on golang.

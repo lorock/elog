@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	goroutineCount = 40000
+	goroutineCount = 4000
 )
 
 var (

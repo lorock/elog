@@ -21,22 +21,20 @@ var (
 	}
 )
 
-// GetBuffer returns a buffer from the pool.
-func GetBuffer() (buf *bytes.Buffer) {
+func getBuffer() (buf *bytes.Buffer) {
 	return bufferPool.Get().(*bytes.Buffer)
 }
 
-// PutBuffer returns a buffer to the pool.
 // The buffer is reset before it is put back into circulation.
-func PutBuffer(buf *bytes.Buffer) {
+func putBuffer(buf *bytes.Buffer) {
 	buf.Reset()
 	bufferPool.Put(buf)
 }
 
-func GetMsg() (msg *logMessage) {
+func getMsg() (msg *logMessage) {
 	return msgPool.Get().(*logMessage)
 }
 
-func PutMsg(msg *logMessage) {
+func putMsg(msg *logMessage) {
 	msgPool.Put(msg)
 }

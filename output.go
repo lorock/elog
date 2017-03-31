@@ -29,8 +29,8 @@ func (e *ELog) baseLog(lvl LogLevel, msg string) {
 	if e.cfg.LogLevel > lvl {
 		return
 	}
-	logMsg := GetMsg()
-	defer PutMsg(logMsg)
+	logMsg := getMsg()
+	defer putMsg(logMsg)
 
 	logMsg.msg = msg
 	logMsg.lvl = lvl
@@ -70,8 +70,8 @@ func (e *ELog) Fatal(format string, params ...interface{}) {
 // core func
 // panic stop from here
 func (e *ELog) log(logMsg *logMessage) {
-	buffer := GetBuffer()
-	defer PutBuffer(buffer)
+	buffer := getBuffer()
+	defer putBuffer(buffer)
 
 	e.logger.Lock()
 	defer e.logger.Unlock()

@@ -32,7 +32,7 @@ var (
 		},
 	}
 
-	errLineNo = errors.New("ELog: get lineno encounter a error.")
+	errLineNo = errors.New("[ELOG]:Get lineno encounter a error.")
 )
 
 func (e *ELog) baseLog(lvl LogLevel, msg string) {
@@ -84,7 +84,7 @@ func (e *ELog) log(logMsg *logMessage) {
 	defer func() {
 		if err := recover(); err != nil {
 			// avoid panic main channel.
-			log.Printf("Recover from a error.Error(%v)\n", err)
+			log.Printf("[ELOG]:Recover from a error.Error(%v)\n", err)
 		}
 	}()
 

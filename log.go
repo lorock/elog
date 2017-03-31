@@ -11,12 +11,14 @@ import (
 )
 
 const (
-	goroutineCount = 4000
+	// goroutineCount specifies how many log messages a particular elog
+	// logger can buffer at a time before writing them.
+	goroutineCount = 100
 )
 
 var (
-	errNoAbsPath        = errors.New("ELog: Config.AbsPath is empty.")
-	errPermissionDenied = errors.New("ELog: Config.Perm is lowest permission, you need change it.")
+	errNoAbsPath        = errors.New("[ELOG]: Config.AbsPath is empty.")
+	errPermissionDenied = errors.New("[ELOG]: Config.Perm is lowest permission, you need change it.")
 )
 
 type ELog struct {
@@ -112,7 +114,6 @@ func (e *ELog) startGoroutine() {
 			select {
 			case logMsg, ok := <-e.logChan:
 				if !ok {
-					log.Println("Chan is closed.")
 					return
 				}
 				e.log(logMsg)
@@ -128,12 +129,6 @@ func (e *ELog) startGoroutine() {
 		}
 	}()
 }
-
-// func (e *ELog) Wait() {
-// 	for len(e.logChan) > 0 {
-// 		time.Sleep(time.Millisecond)
-// 	}
-// }
 
 // reload config.It's aim to rotate log.
 //
@@ -173,18 +168,14 @@ func (e *ELog) Reload() error {
 }
 
 func (e *ELog) Close() {
-	// e.logger.Lock()
-	// defer e.logger.Unlock()
-
-	log.Println("ELog: start close log.")
-	defer log.Println("Elog: log closed.")
+	log.Println("[ELOG]:Start close log.")
+	defer log.Println("[ELOG]:Log closed.")
 
 	var err error
 
 	close(e.logChan)
 	// 等待所有输出完成
 	e.waitClose.Wait()
-	log.Println("After wait.")
 
 	if err = e.logger.f.Sync(); err != nil {
 		fmt.Fprintf(os.Stderr, "Sync log data in Close encounter a error.Error:%v\n", err)

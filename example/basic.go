@@ -22,6 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer logger.Close()
 
 	logger.Debug("This is a debug msg.")
 	logger.Info("This is a info msg.")

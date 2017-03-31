@@ -1,3 +1,5 @@
+// Copyright (C) 2017, No.20 <zdt3476@163.com>. All rights reserved
+
 package elog
 
 import (

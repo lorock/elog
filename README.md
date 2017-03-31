@@ -66,12 +66,12 @@ type Config struct {
 > 推荐使用logrotate工具进行文件切分,使用Elog.Reload()方法重定向输出到新文件即可。
 ```go
 sig := make(chan os.Signal)
-    signal.Notify(sig, syscall.SIGHUP)
-    for s := range sig {
-        if s = syscall.SIGHUP {
-            if err := elog.Reload(); err != nil {
-                fmt.Fprintf(os.Stderr, "Rotate log encounter a error.Error: %v", err)
-            }
-        }
-    }
+signal.Notify(sig, syscall.SIGHUP)
+for s := range sig {
+	if s = syscall.SIGHUP {
+		if err := elog.Reload(); err != nil {
+			fmt.Fprintf(os.Stderr, "Rotate log encounter a error.Error: %v", err)
+		}
+	}
+}
 ```

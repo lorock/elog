@@ -6,13 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
 const (
 	lf          byte = 0x0A // 换行
 	space       byte = 0x20 // 空格
+	separator        = string(filepath.Separator)
 	coreFormat       = "[%s] %v"
 	timeLayout       = "2006-01-02 15:04:05.999"
 	callerDepth      = 3
@@ -31,7 +34,7 @@ func (e *ELog) baseLog(lvl LogLevel, msg string) {
 
 	logMsg.msg = msg
 	logMsg.lvl = lvl
-	line, err := getLineNo()
+	line, err := getLineNo(e.cfg.ShortFileName)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Get line number encounter a error.")
 	}
@@ -110,10 +113,17 @@ func (e *ELog) logPrefix(lvl LogLevel) string {
 	return prefix
 }
 
-func getLineNo() (string, error) {
+func getLineNo(short bool) (string, error) {
 	_, filePath, lineNo, ok := runtime.Caller(callerDepth)
 	if !ok {
 		return "", errLineNo
+	}
+
+	if short {
+		idx := strings.LastIndex(filePath, separator)
+		if idx != -1 {
+			filePath = filePath[idx+1:]
+		}
 	}
 
 	return fmt.Sprintf("%s:%d.", filePath, lineNo), nil

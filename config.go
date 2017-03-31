@@ -15,6 +15,8 @@ type Config struct {
 
 	ShowLineNumber bool // 显示行号 default:true
 
+	ShortFileName bool // 显示行号时，文件名是否包含路径 default:false
+
 	TimeLayout string // 控制时间显示格式，default:2006-01-02 15:04:05.999
 }
 

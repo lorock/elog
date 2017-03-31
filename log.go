@@ -4,16 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
-)
-
-const (
-	// goroutineCount specifies how many log messages a particular elog
-	// logger can buffer at a time before writing them.
-	goroutineCount = 100
 )
 
 var (
@@ -29,9 +22,6 @@ type ELog struct {
 	logChan chan *logMessage
 
 	cfg *Config
-
-	waitWrite sync.WaitGroup
-	waitClose sync.WaitGroup
 }
 
 type logger struct {
@@ -92,45 +82,10 @@ func NewELog(cfg *Config) (*ELog, error) {
 		elog.stdout = os.Stdout
 	}
 
-	elog.startGoroutine()
-
 	return elog, nil
 }
 
-func (e *ELog) startGoroutine() {
-	e.waitWrite.Add(1)
-	go func() {
-		defer func() {
-			e.waitClose.Done()
-		}()
-
-		if e.logChan == nil {
-			e.logChan = make(chan *logMessage, goroutineCount)
-		}
-
-		e.waitWrite.Done()
-		e.waitClose.Add(1)
-		for {
-			select {
-			case logMsg, ok := <-e.logChan:
-				if !ok {
-					return
-				}
-				e.log(logMsg)
-
-				// 处理Fatal
-				if logMsg.lvl == FatalLvl {
-					e.Close()
-					os.Exit(-1)
-				}
-
-				msgPool.Put(logMsg) // 用完之后将对象放回池里
-			}
-		}
-	}()
-}
-
-// reload config.It's aim to rotate log.
+// Reload config.It's aim to rotate log.
 //
 // example:
 //     sig := make(chan os.Signal)
@@ -168,14 +123,9 @@ func (e *ELog) Reload() error {
 }
 
 func (e *ELog) Close() {
-	log.Println("[ELOG]:Start close log.")
-	defer log.Println("[ELOG]:Log closed.")
-
+	e.logger.Lock()
+	defer e.logger.Unlock()
 	var err error
-
-	close(e.logChan)
-	// 等待所有输出完成
-	e.waitClose.Wait()
 
 	if err = e.logger.f.Sync(); err != nil {
 		fmt.Fprintf(os.Stderr, "Sync log data in Close encounter a error.Error:%v\n", err)

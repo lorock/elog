@@ -1,13 +1,10 @@
 package elog
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -20,26 +17,15 @@ const (
 )
 
 var (
-	bufPool = &sync.Pool{
-		New: func() interface{} {
-			return &bytes.Buffer{}
-		},
-	}
-
-	msgPool = &sync.Pool{
-		New: func() interface{} {
-			return &logMessage{}
-		},
-	}
-
 	errLineNo = errors.New("[ELOG]:Get lineno encounter a error.")
 )
 
 func (e *ELog) baseLog(lvl LogLevel, msg string) {
 	if e.cfg.LogLevel > lvl {
-		return // 屏蔽打印
+		return
 	}
-	logMsg := msgPool.Get().(*logMessage)
+	logMsg := GetMsg()
+	defer PutMsg(logMsg)
 
 	logMsg.msg = msg
 	logMsg.lvl = lvl
@@ -49,8 +35,7 @@ func (e *ELog) baseLog(lvl LogLevel, msg string) {
 	}
 	logMsg.lineNo = line
 
-	e.waitWrite.Wait()
-	e.logChan <- logMsg
+	e.log(logMsg)
 }
 
 func (e *ELog) Debug(format string, params ...interface{}) {
@@ -69,53 +54,44 @@ func (e *ELog) Error(format string, params ...interface{}) {
 	e.baseLog(ErrorLvl, fmt.Sprintf(format, params...))
 }
 
-// Panic由调用者处理
 func (e *ELog) Panic(format string, params ...interface{}) {
 	e.baseLog(PanicLvl, fmt.Sprintf(format, params...))
 }
 
-// 这里会退出程序,调用os.Exit()
 func (e *ELog) Fatal(format string, params ...interface{}) {
 	e.baseLog(FatalLvl, fmt.Sprintf(format, params...))
 }
 
 // core func
+// panic stop from here
 func (e *ELog) log(logMsg *logMessage) {
-	defer func() {
-		if err := recover(); err != nil {
-			// avoid panic main channel.
-			log.Printf("[ELOG]:Recover from a error.Error(%v)\n", err)
-		}
-	}()
-
-	var buffer *bytes.Buffer
-	buffer = bufPool.Get().(*bytes.Buffer)
-	buffer.Reset() // 不能保证buffer是否被GC
-	defer bufPool.Put(buffer)
+	buffer := GetBuffer()
+	defer PutBuffer(buffer)
 
 	e.logger.Lock()
 	defer e.logger.Unlock()
 
-	// 前缀
 	buffer.WriteString(e.logPrefix(logMsg.lvl))
 	buffer.WriteByte(space)
 
-	// 行号
 	if e.cfg.ShowLineNumber {
 		buffer.WriteString(logMsg.lineNo)
 		buffer.WriteByte(space)
 	}
 
-	// 日志信息
 	buffer.WriteString(logMsg.msg)
 	buffer.WriteByte(lf)
 
-	// 写入文件
 	e.logger.f.Write(buffer.Bytes())
 
-	// 写入标注输出
 	if e.cfg.EnabledStdout {
 		e.stdout.Write(buffer.Bytes())
+	}
+
+	if logMsg.lvl == FatalLvl {
+		os.Exit(-1)
+	} else if logMsg.lvl == PanicLvl {
+		panic("")
 	}
 }
 
@@ -132,7 +108,6 @@ func (e *ELog) logPrefix(lvl LogLevel) string {
 	return prefix
 }
 
-// 失败返回空字符串
 func getLineNo() (string, error) {
 	_, filePath, lineNo, ok := runtime.Caller(callerDepth)
 	if !ok {

@@ -9,17 +9,17 @@ const (
 	InfoLvl
 	WarnLvl
 	ErrorLvl
-	PanicLvl // panic
+	PanicLvl
 	FatalLvl // os.Exit()
 )
 
 const (
-	DebugStr = "DEBUG"
+	DebugStr = "DEBG"
 	InfoStr  = "INFO"
 	WarnStr  = "WARN"
-	ErrorStr = "ERROR"
-	PanicStr = "PANIC"
-	FatalStr = "FATAL"
+	ErrorStr = "EROR"
+	PanicStr = "PANC"
+	FatalStr = "FATL"
 )
 
 var (
@@ -42,7 +42,6 @@ var (
 	}
 )
 
-// 配置的时候使用
 func Str2LogLvl(v string) (LogLevel, bool) {
 	lvl, found := str2LvlMap[v]
 	return lvl, found

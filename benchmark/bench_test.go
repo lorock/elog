@@ -35,7 +35,7 @@ func BenchmarkRunParallel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			logger.Debug("Go fast.Int(%d),int64(%d),float(%f),string(%s),bool(%v),time(%v),duration(%d)",
-				1, int64(1), 3.0, "four!", true, time.Unix(0, 0), time.Second)
+				1, int64(1), 3.0, "four!", true, time.Now().UnixNano(), time.Second)
 		}
 	})
 	logger.Close()

@@ -12,23 +12,12 @@ package main
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/zdt3476/elog"
 )
 
 func main() {
-	dir, _ := os.Getwd()
-	path, err := filepath.Abs(dir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	filename := filepath.Join(path, "log/log.log")
-
-	cfg := elog.NewDefaultConfig(filename)
-
-	logger, err := elog.NewELog(cfg)
+	logger, err := elog.NewELog(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,8 +31,8 @@ func main() {
 ```
 ## Output
 ```
-[DEBG] 2017-03-31 14:06:53.68 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:27. This is a debug msg.
-[INFO] 2017-03-31 14:06:53.68 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:28. This is a info msg.
-[WARN] 2017-03-31 14:06:53.68 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:29. This is a warn msg.
-[EROR] 2017-03-31 14:06:53.68 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:30. This is a error msg.
+[DEBG] 2017-03-31 14:24:36.559 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:25. This is a debug msg.
+[INFO] 2017-03-31 14:24:36.559 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:26. This is a info msg.
+[WARN] 2017-03-31 14:24:36.559 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:27. This is a warn msg.
+[EROR] 2017-03-31 14:24:36.559 /Users/zdt3476/Go/src/github.com/zdt3476/elog/example/basic.go:28. This is a error msg.
 ```
